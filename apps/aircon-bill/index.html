@@ -1,0 +1,232 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>에어컨 요금 미리보기</title>
+<style>
+  :root {
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --text: #1a2233;
+    --sub: #5b6478;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --danger: #dc2626;
+    --danger-soft: #fee2e2;
+    --warn: #d97706;
+    --warn-soft: #fef3c7;
+    --ok: #16a34a;
+    --border: #e3e8f2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1420;
+      --card: #1a2233;
+      --text: #eef1f8;
+      --sub: #9aa4bb;
+      --accent: #60a5fa;
+      --accent-soft: #1e3a5f;
+      --danger: #f87171;
+      --danger-soft: #4a1d1d;
+      --warn: #fbbf24;
+      --warn-soft: #453309;
+      --ok: #4ade80;
+      --border: #2b3550;
+    }
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif;
+    line-height: 1.5;
+    padding: 20px 16px 48px;
+    max-width: 480px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .desc { color: var(--sub); font-size: 13px; margin-bottom: 20px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .value-badge { float: right; color: var(--accent); font-weight: 700; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); margin: 8px 0 4px; }
+  input[type="number"] {
+    width: 100%;
+    font-size: 16px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg);
+    color: var(--text);
+  }
+  .hint { font-size: 12px; color: var(--sub); }
+  .presets { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .presets button {
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--sub);
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .presets button.on { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+  .field { margin-bottom: 18px; }
+  .field:last-child { margin-bottom: 0; }
+
+  #result { text-align: center; padding: 24px 18px; }
+  .result-label { font-size: 14px; color: var(--sub); }
+  #totalBill { font-size: 40px; font-weight: 800; letter-spacing: -1px; margin: 4px 0; }
+  #diff {
+    display: inline-block;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: var(--danger-soft);
+    color: var(--danger);
+    margin-top: 4px;
+  }
+  #tierBadge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-top: 12px;
+  }
+  .tier-1 { background: var(--accent-soft); color: var(--accent); }
+  .tier-2 { background: var(--warn-soft); color: var(--warn); }
+  .tier-3 { background: var(--danger-soft); color: var(--danger); }
+  .breakdown {
+    margin-top: 16px;
+    border-top: 1px dashed var(--border);
+    padding-top: 12px;
+    font-size: 13px;
+    color: var(--sub);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .breakdown div { display: flex; justify-content: space-between; }
+  footer { font-size: 11px; color: var(--sub); text-align: center; margin-top: 8px; }
+</style>
+
+<h1>에어컨 요금 미리보기 ⚡</h1>
+<p class="desc">고지서 나올 때까지 한 달을 불안해하지 마세요. 슬라이더만 움직이면 이번 달 예상 전기요금이 바로 보입니다. (주택용 저압 · 하계 누진제 기준)</p>
+
+<div class="card">
+  <div class="field">
+    <label for="watt">에어컨 소비전력 <span class="hint">(제품 라벨의 "냉방 소비전력")</span></label>
+    <input type="number" id="watt" min="100" max="10000" step="50" value="1800">
+    <div class="presets" id="wattPresets">
+      <button data-w="700">벽걸이 6평 (700W)</button>
+      <button data-w="1800" class="on">스탠드 15평 (1800W)</button>
+      <button data-w="2500">스탠드 20평 (2500W)</button>
+    </div>
+  </div>
+  <div class="field">
+    <label for="hours">하루 평균 사용 시간 <span class="value-badge" id="hoursVal">8시간</span></label>
+    <input type="range" id="hours" min="0" max="24" step="0.5" value="8">
+    <span class="hint">인버터형은 설정 온도 도달 후 전력이 줄어요. 애매하면 실제 켠 시간의 70% 정도로.</span>
+  </div>
+  <div class="field">
+    <label for="baseKwh">에어컨 빼고 평소 월 사용량 <span class="value-badge" id="baseKwhVal">300kWh</span></label>
+    <input type="range" id="baseKwh" min="100" max="600" step="10" value="300">
+    <span class="hint">모르면 그대로 두세요. 4인 가구 평균이 대략 300kWh입니다.</span>
+  </div>
+</div>
+
+<div class="card" id="result">
+  <div class="result-label">이번 달 예상 전기요금</div>
+  <div id="totalBill">—</div>
+  <div id="diff">—</div>
+  <div><span id="tierBadge">—</span></div>
+  <div class="breakdown">
+    <div><span>에어컨 추가 사용량</span><b id="acKwh">—</b></div>
+    <div><span>총 사용량</span><b id="totalKwh">—</b></div>
+    <div><span>에어컨 없을 때 요금</span><b id="baseBill">—</b></div>
+  </div>
+</div>
+
+<footer>부가세·전력기금 포함 추정치입니다. 실제 고지액과 다를 수 있어요.<br>요금표: 한국전력 주택용(저압) 하계(7~8월) 기준.</footer>
+
+<script>
+  // 한전 주택용(저압) 하계(7~8월) 요금표 — 요금 개정 시 이 상수만 수정
+  const TIERS = [
+    { limit: 300, base: 910,  rate: 120.0 },
+    { limit: 450, base: 1600, rate: 214.6 },
+    { limit: 1000, base: 7300, rate: 307.3 },
+    { limit: Infinity, base: 7300, rate: 736.2 }, // 슈퍼유저(하계 1000kWh 초과)
+  ];
+  const CLIMATE_RATE = 9;   // 기후환경요금 원/kWh
+  const FUEL_RATE = 5;      // 연료비조정액 원/kWh
+  const VAT = 0.1;          // 부가가치세
+  const FUND = 0.037;       // 전력산업기반기금
+
+  function bill(kwh) {
+    let tierIdx = TIERS.findIndex(t => kwh <= t.limit);
+    if (tierIdx === -1) tierIdx = TIERS.length - 1;
+    let energy = 0, prev = 0;
+    for (const t of TIERS) {
+      const span = Math.min(kwh, t.limit) - prev;
+      if (span <= 0) break;
+      energy += span * t.rate;
+      prev = t.limit;
+    }
+    const subtotal = TIERS[tierIdx].base + energy + kwh * (CLIMATE_RATE + FUEL_RATE);
+    const vat = Math.round(subtotal * VAT);
+    const fund = Math.floor(subtotal * FUND / 10) * 10;
+    return { total: Math.floor((subtotal + vat + fund) / 10) * 10, tier: tierIdx + 1 };
+  }
+
+  const $ = id => document.getElementById(id);
+  const won = n => n.toLocaleString("ko-KR") + "원";
+  const TIER_LABELS = ["누진 1구간 · 여유 있어요 😌", "누진 2구간 · 슬슬 조심 😐", "누진 3구간 진입! 🔥", "슈퍼유저 요금 적용 🚨"];
+
+  function update() {
+    const watt = Math.max(0, +$("watt").value || 0);
+    const hours = +$("hours").value;
+    const baseKwh = +$("baseKwh").value;
+
+    $("hoursVal").textContent = hours + "시간";
+    $("baseKwhVal").textContent = baseKwh + "kWh";
+
+    const acKwh = Math.round(watt / 1000 * hours * 30);
+    const totalKwh = baseKwh + acKwh;
+    const withAc = bill(totalKwh);
+    const withoutAc = bill(baseKwh);
+
+    $("totalBill").textContent = won(withAc.total);
+    $("diff").textContent = "에어컨 없을 때 대비 +" + won(withAc.total - withoutAc.total);
+    $("acKwh").textContent = acKwh + "kWh";
+    $("totalKwh").textContent = totalKwh + "kWh";
+    $("baseBill").textContent = won(withoutAc.total);
+
+    const badge = $("tierBadge");
+    badge.textContent = TIER_LABELS[withAc.tier - 1];
+    badge.className = "tier-" + Math.min(withAc.tier, 3);
+
+    document.querySelectorAll("#wattPresets button").forEach(b =>
+      b.classList.toggle("on", +b.dataset.w === watt));
+
+    localStorage.setItem("acbill", JSON.stringify({ watt, hours, baseKwh }));
+  }
+
+  const saved = JSON.parse(localStorage.getItem("acbill") || "null");
+  if (saved) {
+    $("watt").value = saved.watt;
+    $("hours").value = saved.hours;
+    $("baseKwh").value = saved.baseKwh;
+  }
+
+  ["watt", "hours", "baseKwh"].forEach(id => $(id).addEventListener("input", update));
+  document.querySelectorAll("#wattPresets button").forEach(b =>
+    b.addEventListener("click", () => { $("watt").value = b.dataset.w; update(); }));
+
+  update();
+</script>
